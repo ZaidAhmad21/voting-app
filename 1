@@ -1,0 +1,113 @@
+root@ip-172-31-16-239:~# kubectl get all
+NAME                          READY   STATUS    RESTARTS   AGE
+pod/db-58cc845644-g7qn4       1/1     Running   0          6m31s
+pod/redis-6878558678-lqwbd    1/1     Running   0          6m31s
+pod/result-86bc6f7b5d-8ntkg   1/1     Running   0          6m31s
+pod/vote-7d884dd585-mkcmb     1/1     Running   0          6m31s
+pod/worker-6fc5d5b668-9zq49   1/1     Running   0          6m31s
+
+NAME                 TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+service/db           ClusterIP   10.108.248.46    <none>        5432/TCP         10m
+service/kubernetes   ClusterIP   10.96.0.1        <none>        443/TCP          13m
+service/redis        ClusterIP   10.101.100.103   <none>        6379/TCP         10m
+service/result       NodePort    10.107.10.180    <none>        5001:31001/TCP   10m
+service/vote         NodePort    10.103.74.7      <none>        5000:31000/TCP   10m
+
+NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/db       1/1     1            1           10m
+deployment.apps/redis    1/1     1            1           10m
+deployment.apps/result   1/1     1            1           10m
+deployment.apps/vote     1/1     1            1           10m
+deployment.apps/worker   1/1     1            1           10m
+
+NAME                                DESIRED   CURRENT   READY   AGE
+replicaset.apps/db-58cc845644       1         1         1       9m36s
+replicaset.apps/redis-6878558678    1         1         1       9m36s
+replicaset.apps/result-86bc6f7b5d   1         1         1       9m36s
+replicaset.apps/vote-7d884dd585     1         1         1       9m36s
+replicaset.apps/worker-6fc5d5b668   1         1         1       9m36s
+
+Take your publicIP (your instance IP) : NodePort ► open 2 browsers , one for VOTING and one for Results.
+http://47.129.42.23:31000/  
+http://47.129.42.23:31001/
+Both working fine..
+
+Try voting and see the results paralelly in results page.
+Both are working.
+
+
+1st ► Delete VOTE pod ► Observe what happens both in frontEnd & in Unix
+
+root@ip-172-31-16-239:~# kubectl get po
+NAME                      READY   STATUS    RESTARTS   AGE
+db-58cc845644-g7qn4       1/1     Running   0          18m
+redis-6878558678-lqwbd    1/1     Running   0          18m
+result-86bc6f7b5d-8ntkg   1/1     Running   0          18m
+vote-7d884dd585-mkcmb     1/1     Running   0          18m
+worker-6fc5d5b668-9zq49   1/1     Running   0          18m
+
+
+root@ip-172-31-16-239:~# kubectl delete po vote-7d884dd585-mkcmb
+pod "vote-7d884dd585-mkcmb" deleted
+
+
+root@ip-172-31-16-239:~# kubectl get po
+NAME                      READY   STATUS    RESTARTS   AGE
+db-58cc845644-g7qn4       1/1     Running   0          19m
+redis-6878558678-lqwbd    1/1     Running   0          19m
+result-86bc6f7b5d-8ntkg   1/1     Running   0          19m
+vote-7d884dd585-kqt66     1/1     Running   0          6s
+worker-6fc5d5b668-9zq49   1/1     Running   0          19m
+
+After deleting vote pod again created with diffrent instance id, everything ok with Frontend.
+
+2nd ► Delete WORKER pod  ► Observe what happens both in frontEnd & in Unix
+
+root@ip-172-31-16-239:~# kubectl get po
+NAME                      READY   STATUS    RESTARTS   AGE
+db-58cc845644-g7qn4       1/1     Running   0          19m
+redis-6878558678-lqwbd    1/1     Running   0          19m
+result-86bc6f7b5d-8ntkg   1/1     Running   0          19m
+vote-7d884dd585-kqt66     1/1     Running   0          6s
+worker-6fc5d5b668-9zq49   1/1     Running   0          19m
+
+
+root@ip-172-31-16-239:~# kubectl delete po worker-6fc5d5b668-9zq49
+pod "worker-6fc5d5b668-9zq49" deleted
+
+
+root@ip-172-31-16-239:~# kubectl get po
+NAME                      READY   STATUS    RESTARTS   AGE
+db-58cc845644-g7qn4       1/1     Running   0          24m
+redis-6878558678-lqwbd    1/1     Running   0          24m
+result-86bc6f7b5d-8ntkg   1/1     Running   0          24m
+vote-7d884dd585-kqt66     1/1     Running   0          5m28s
+worker-6fc5d5b668-czcw2   1/1     Running   0          5s
+
+After deleting worker pod again created with diffrent instance id, everything ok with Frontend.
+
+3rd ► Delete DB pod ► Observe what happens both in frontEnd & in Unix
+
+root@ip-172-31-16-239:~# kubectl get po
+NAME                      READY   STATUS    RESTARTS   AGE
+db-58cc845644-g7qn4       1/1     Running   0          28m
+redis-6878558678-lqwbd    1/1     Running   0          28m
+result-86bc6f7b5d-8ntkg   1/1     Running   0          28m
+vote-7d884dd585-kqt66     1/1     Running   0          9m12s
+worker-6fc5d5b668-czcw2   1/1     Running   0          3m49s
+
+
+root@ip-172-31-16-239:~# kubectl delete po db-58cc845644-g7qn4
+pod "db-58cc845644-g7qn4" deleted
+
+
+root@ip-172-31-16-239:~# kubectl get po
+NAME                      READY   STATUS    RESTARTS     AGE
+db-58cc845644-bp57t       1/1     Running   0            35s
+redis-6878558678-lqwbd    1/1     Running   0            29m
+result-86bc6f7b5d-8ntkg   1/1     Running   1 (6s ago)   29m
+vote-7d884dd585-kqt66     1/1     Running   0            10m
+worker-6fc5d5b668-czcw2   1/1     Running   1 (6s ago)   4m58s
+
+After deleting worker pod again created with diffrent instance id also result and worker pod restarted once, everything ok with Frontend.
+
